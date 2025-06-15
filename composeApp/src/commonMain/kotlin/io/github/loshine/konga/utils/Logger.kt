@@ -19,7 +19,7 @@ object Logger {
         ASSERT;
     }
 
-    fun init(defaultTag: String = "konga") {
+    fun init(defaultTag: String = "KoNga") {
         Napier.base(DebugAntilog(defaultTag))
     }
 

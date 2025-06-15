@@ -3,10 +3,10 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -18,7 +18,7 @@ kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -59,12 +59,18 @@ kotlin {
         val desktopMain by getting
 
         commonMain.dependencies {
+            implementation(libs.kotlinx.collections.immutable)
+
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation(compose.materialIconsExtended)
             implementation(compose.material3)
+            implementation(compose.material3AdaptiveNavigationSuite)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+
+            implementation(libs.compose.material3.adaptive)
 
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -80,12 +86,23 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.ktor.bom))
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.encoding)
+            implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.serialization.kotlinx.xml)
 
             implementation(libs.fleeksoft.io.charset.ext)
             implementation(libs.logging.napier)
+
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.coroutines)
+            implementation(libs.multiplatform.settings.make.observable)
+
+            implementation(libs.sketch.http.ktor3)
+            implementation(libs.sketch.compose)
+            implementation(libs.sketch.compose.resources)
+            implementation(libs.sketch.extensions.compose)
+            implementation(libs.sketch.extensions.compose.resources)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -97,6 +114,9 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.ktor.bom))
             implementation(libs.ktor.engine.okhttp)
+
+            implementation(libs.datastore.preferences.core)
+            implementation(libs.multiplatform.settings.datastore)
         }
 
         desktopMain.dependencies {
@@ -105,11 +125,17 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.ktor.bom))
             implementation(libs.ktor.engine.okhttp)
+
+            implementation(libs.datastore.preferences.core)
+            implementation(libs.multiplatform.settings.datastore)
         }
 
         iosMain.dependencies {
             implementation(project.dependencies.platform(libs.ktor.bom))
             implementation(libs.ktor.engine.darwin)
+
+            implementation(libs.datastore.preferences.core)
+            implementation(libs.multiplatform.settings.datastore)
         }
 
         wasmJsMain.dependencies {
@@ -146,8 +172,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -178,9 +204,33 @@ dependencies {
     add("kspWasmJs", libs.koin.ksp.compiler)
 }
 
-// Trigger Common Metadata Generation from Native tasks
-//project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
-//    if (name != "kspCommonMainKotlinMetadata") {
-//        dependsOn("kspCommonMainKotlinMetadata")
-//    }
-//}
+project.afterEvaluate {
+    tasks.named("kspDebugKotlinAndroid") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+    tasks.named("kspReleaseKotlinAndroid") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+    tasks.named("kspKotlinIosX64") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+    tasks.named("kspKotlinIosArm64") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+    tasks.named("kspKotlinIosSimulatorArm64") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+    tasks.named("kspKotlinDesktop") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+    tasks.named("kspKotlinWasmJs") {
+        dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+        enabled = false
+    }
+}
